@@ -47,6 +47,15 @@ def get_ob_metrics(ob_data, depth=None):
     total_volume = dict(zip(list(ob_data.keys()), total_volume))
 
     # OHLCV (Open, High, Low, Close, Volume)
+    # Mid price and volume for OHLCV calcultation
+    mid_ohlcv = {i: [(ob_data[i].iloc[0, :]['ask'] + ob_data[i].iloc[0, :]['bid']) * 0.5,
+                     np.add(ob_data[i]['bid_size'], ob_data[i]['ask_size']).cumsum()[-1]]
+                     for i in ob_data}
+
+    ohlcv = pd.DataFrame.from_dict(mid_ohlcv).T
+    ohlcv.columns = ['Midprice', 'Volume']
+    ohlcv.index = pd.to_datetime(pd.Series(ohlcv.index.values.tolist()))
+    ohlcv = ohlcv.resample('1min').agg({'Midprice': 'ohlc', 'Volume': 'sum'}) # Change per minute
 
     # -- Depth dependant metrics -- #
     if depth is None:
@@ -72,17 +81,18 @@ def get_ob_metrics(ob_data, depth=None):
                                 for i in ob_data}
 
         # Stats momentums for OrderBook inbalance
-        stats_m = [np.mean(list(ob_inbalance.values())),
-                   np.var(list(ob_inbalance.values())),
-                   st.skew(list(ob_inbalance.values())),
-                   st.kurtosis(list(ob_inbalance.values()))]
+        stats_m = {'median': np.median(list(ob_inbalance.values())),
+                   'var': np.var(list(ob_inbalance.values())),
+                   'skewness': st.skew(list(ob_inbalance.values())),
+                   'kurtosis': st.kurtosis(list(ob_inbalance.values()))}
 
         # Return data definition
         r_dict = {'update_median':delta_median, 'price_levels':price_levels,
                   'bid_volume':bid_volume, 'ask_volume':ask_volume,
-                  'total_volume':total_volume, 'volume_inbalance':ob_inbalance,
+                  'total_volume':total_volume, 'spread':spread,
+                  'midprice':mid_price, 'volume_inbalance':ob_inbalance,
                   'weighted_mid':weight_mid_a, 'vwap':ob_vwap,
-                  'stats_momentums':stats_m}
+                  'stats_moments':stats_m, 'ohlcv':ohlcv}
 
         return r_dict
 
@@ -112,22 +122,74 @@ def get_ob_metrics(ob_data, depth=None):
                                 ob_data[i]['ask'], ob_data[i]['ask_size'], depth)
                    for i in ob_data}
 
-        # Stats momentums for OrderBook inbalance
-        stats_m = [np.mean(list(ob_inbalance.values())),
-                   np.var(list(ob_inbalance.values())),
-                   st.skew(list(ob_inbalance.values())),
-                   st.kurtosis(list(ob_inbalance.values()))]
+        # Stats moments for OrderBook inbalance
+        stats_m = {'median': np.median(list(ob_inbalance.values())),
+                   'var': np.var(list(ob_inbalance.values())),
+                   'skewness': st.skew(list(ob_inbalance.values())),
+                   'kurtosis': st.kurtosis(list(ob_inbalance.values()))}
 
         # Return data definition
         r_dict = {'update_median':delta_median, 'price_levels':price_levels,
                   'bid_volume':bid_volume, 'ask_volume':ask_volume,
-                  'total_volume':total_volume, 'volume_inbalance':ob_inbalance,
+                  'total_volume':total_volume, 'spread':spread,
+                  'midprice':mid_price, 'volume_inbalance':ob_inbalance,
                   'weighted_mid':weight_mid_a, 'vwap':ob_vwap,
-                  'stats_momentums':stats_m}
+                  'stats_moments':stats_m, 'ohlcv':ohlcv}
 
         return r_dict
 
 # =================================== PublicTrades metrics function ======================================= #
 
 ### Function definition
+def get_pt_metrics(pt_data):
+
+    # -- Count metrics -- #
+    pt_data['hour'] = [i.hour for i in pd.to_datetime(pt_data['timestamp'])] # Hour extract
+
+    # Buy trade count
+    buy_count = pt_data[pt_data.side=='buy'].pivot_table(values='price', index='hour', aggfunc='count')
+
+    # Sell trade count
+    sell_count = pt_data[pt_data.side=='sell'].pivot_table(values='price', index='hour', aggfunc='count')
+
+    # Total trade count
+    total_count = np.add(buy_count, sell_count)
+
+    # Diff in trade count (buy-sell). If negatives means more sell than buy
+    diff_count = np.subtract(buy_count, sell_count)
+
+    # -- Volume metrics -- #
+    # Buy volume
+    buy_volume = pt_data[pt_data.side=='buy'].pivot_table(values='amount', index='hour', aggfunc='sum')
+
+    # Sell volume
+    sell_volume = pt_data[pt_data.side=='sell'].pivot_table(values='amount', index='hour', aggfunc='sum')
+
+    # Total volume
+    total_volume = np.add(buy_volume, sell_volume)
+
+    # Diff in trade volume (buy-sell). If negatives means more operated volume in sell
+    diff_volume = np.subtract(buy_volume, sell_volume)
+
+    # OHLCV (Open, High, Low, Close, Volume): (Traded volume)
+    ohlcv_data = pt_data
+    ohlcv_data.index = pd.to_datetime(ohlcv_data.timestamp)
+    ohlcv_data.drop(['timestamp', 'side', 'hour'], axis=1, inplace=True) # OHLCV prepared data
+
+    ohlcv_data = ohlcv_data.resample('1h').agg({'price': 'ohlc', 'amount': 'sum'})
+
+    # Statistical moments for diff volume
+    stats_m = {'median': np.median(diff_volume),
+               'var': np.var(diff_volume),
+               'skewness': st.skew(diff_volume),
+               'kurtosis': st.kurtosis(diff_volume)}
+
+    # Return data definition
+    r_dict = {'buy_count':buy_count, 'sell_count':sell_count,
+              'total_count':total_count, 'diff_count':diff_count,
+              'buy_volume':buy_volume, 'sell_volume':sell_volume,
+              'total_volume':total_volume, 'diff_volume':diff_volume,
+              'ohlcv':ohlcv_data, 'stats_moments':stats_m}
+
+
 
