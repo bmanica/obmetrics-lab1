@@ -34,13 +34,13 @@ def get_ob_metrics(ob_data, depth=None):
                               for i in range(len(times_ob)-1)]).total_seconds()*1000
 
     # Price levels for each OrderBook
-    price_levels = {j: len(list(ob_data.values())[i]) for i, j in zip(range(len(list(ob_data.keys()))),
+    price_levels = {j: [len(list(ob_data.values())[i])] for i, j in zip(range(len(list(ob_data.keys()))),
                                                                       ob_data.keys())}
     # Bid volume for each OrderBook
-    bid_volume = {i: round(ob_data[i]['bid_size'].sum(), 6) for i in ob_data}
+    bid_volume = {i: [round(ob_data[i]['bid_size'].sum(), 6)] for i in ob_data}
 
     # Ask volume for each OrderBook
-    ask_volume = {i: round(ob_data[i]['ask_size'].sum(), 6) for i in ob_data}
+    ask_volume = {i: [round(ob_data[i]['ask_size'].sum(), 6)] for i in ob_data}
 
     # Total volume for each OrderBook
     total_volume = np.add(list(bid_volume.values()), list(ask_volume.values())).round(6).tolist()
@@ -61,28 +61,28 @@ def get_ob_metrics(ob_data, depth=None):
     if depth is None:
 
         # Spread, in this case defined just for top of the book
-        spread = {i: ob_data[i].iloc[0,:]['ask'] - ob_data[i].iloc[0,:]['bid'] for i in ob_data}
+        spread = {i: [ob_data[i].iloc[0,:]['ask'] - ob_data[i].iloc[0,:]['bid']] for i in ob_data}
 
         # Mid price, in this case defined just for top of the book
-        mid_price = {i: (ob_data[i].iloc[0,:]['ask'] + ob_data[i].iloc[0,:]['bid']) * 0.5
+        mid_price = {i: [(ob_data[i].iloc[0,:]['ask'] + ob_data[i].iloc[0,:]['bid']) * 0.5]
                      for i in ob_data}
 
         # OrderBook inbalance for each OrderBook, by default takes all
-        ob_inbalance = {i: calc_inbalace(ob_data[i]['bid_size'], ob_data[i]['ask_size'],
-                                         len(ob_data[i])) for i in ob_data}
+        ob_inbalance = {i: [calc_inbalace(ob_data[i]['bid_size'], ob_data[i]['ask_size'],
+                                         len(ob_data[i]))] for i in ob_data}
 
         # Weighted midprice, default option top of the book
         weight_mid_a = {i: w_mid(ob_data[i]['bid'], ob_data[i]['bid_size'],
                                  ob_data[i]['ask'], ob_data[i]['ask_size'],1) for i in ob_data}
 
         # VWAP (Volume-Weigthed Average Price), in this section just top of the book
-        ob_vwap = {i: calc_vwap(ob_data[i]['bid'], ob_data[i]['bid_size'],
-                                ob_data[i]['ask'], ob_data[i]['ask_size'], 1)
+        ob_vwap = {i: [calc_vwap(ob_data[i]['bid'], ob_data[i]['bid_size'],
+                                ob_data[i]['ask'], ob_data[i]['ask_size'], 1)]
                                 for i in ob_data}
 
         # Stats momentums for OrderBook inbalance
-        stats_m = {'median': np.median(list(ob_inbalance.values())),
-                   'var': np.var(list(ob_inbalance.values())),
+        stats_m = {'median': [np.median(list(ob_inbalance.values()))],
+                   'var': [np.var(list(ob_inbalance.values()))],
                    'skewness': st.skew(list(ob_inbalance.values())),
                    'kurtosis': st.kurtosis(list(ob_inbalance.values()))}
 
@@ -99,34 +99,34 @@ def get_ob_metrics(ob_data, depth=None):
     else:
 
         # Spread, in this case defined for the depth input
-        spread = {i: ob_data[i].iloc[0:depth,:]['ask'] - ob_data[i].iloc[0:depth,:]['bid']
+        spread = {i: [ob_data[i].iloc[0:depth,:]['ask'] - ob_data[i].iloc[0:depth,:]['bid']]
                   for i in ob_data}
 
         # Mid price, in this case defined for the depth input
-        mid_price = {i: (ob_data[i].iloc[0:depth,:]['ask'] + ob_data[i].iloc[0:depth,:]['bid']) * 0.5
+        mid_price = {i: [(ob_data[i].iloc[0:depth,:]['ask'] + ob_data[i].iloc[0:depth,:]['bid']) * 0.5]
                      for i in ob_data}
 
         # OrderBook inbalance for each OrderBook, depth input
-        ob_inbalance = {i: calc_inbalace(ob_data[i]['bid_size'], ob_data[i]['ask_size'],
-                                         depth) for i in ob_data}
+        ob_inbalance = {i: [calc_inbalace(ob_data[i]['bid_size'], ob_data[i]['ask_size'],
+                                         depth)] for i in ob_data}
 
         # Weighted midprice, for depth input
         # First way to calculate
-        weight_mid_a = {i: w_mid(ob_data[i]['bid'], ob_data[i]['bid_size'],
-                                 ob_data[i]['ask'], ob_data[i]['ask_size'], depth) for i in ob_data}
+        weight_mid_a = {i: [w_mid(ob_data[i]['bid'], ob_data[i]['bid_size'],
+                                 ob_data[i]['ask'], ob_data[i]['ask_size'], depth)] for i in ob_data}
 
         # Second way to calculate
 
         # VWAP (Volume-Weigthed Average Price), in this section just top of the book
-        ob_vwap = {i: calc_vwap(ob_data[i]['bid'], ob_data[i]['bid_size'],
-                                ob_data[i]['ask'], ob_data[i]['ask_size'], depth)
+        ob_vwap = {i: [calc_vwap(ob_data[i]['bid'], ob_data[i]['bid_size'],
+                                ob_data[i]['ask'], ob_data[i]['ask_size'], depth)]
                    for i in ob_data}
 
         # Stats moments for OrderBook inbalance
-        stats_m = {'median': np.median(list(ob_inbalance.values())),
-                   'var': np.var(list(ob_inbalance.values())),
-                   'skewness': st.skew(list(ob_inbalance.values())),
-                   'kurtosis': st.kurtosis(list(ob_inbalance.values()))}
+        stats_m = {'median': [np.median(list(ob_inbalance.values()))],
+                   'var': [np.var(list(ob_inbalance.values()))],
+                   'skewness': [st.skew(list(ob_inbalance.values()))],
+                   'kurtosis': [st.kurtosis(list(ob_inbalance.values()))]}
 
         # Return data definition
         r_dict = {'update_median':delta_median, 'price_levels':price_levels,
@@ -190,6 +190,8 @@ def get_pt_metrics(pt_data):
               'buy_volume':buy_volume, 'sell_volume':sell_volume,
               'total_volume':total_volume, 'diff_volume':diff_volume,
               'ohlcv':ohlcv_data, 'stats_moments':stats_m}
+
+    return r_dict
 
 
 
