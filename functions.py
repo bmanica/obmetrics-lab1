@@ -127,4 +127,7 @@ def get_ob_metrics(ob_data, depth=None):
 
         return r_dict
 
+# =================================== PublicTrades metrics function ======================================= #
+
+### Function definition
 
