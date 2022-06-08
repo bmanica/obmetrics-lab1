@@ -64,13 +64,13 @@ def plot_publictrades(pt_data,
     # Each change in 0.01 USD
     changes = pd.cut(pt_data["price"], bins=np.arange(min(pt_data.price), max(pt_data.price), 0.01),
                      right=False).cat.codes
+    pt_data['time'] = pd.to_datetime(pt_data.index.values.tolist()) # Time for sorting
 
     plot_data = pt_data.groupby((changes!=changes.shift(1)).cumsum()).agg(
-                                {'timestamp': 'max', "price": "max", "amount": "sum"})
+                                {'time': 'max', "price": "max", "amount": "sum"})
 
-    plot_data['hour'] = [i.hour for i in pd.to_datetime(plot_data['timestamp'])]
-    plot_data['timestamp'] = pd.to_datetime(plot_data['timestamp'])
-    plot_data.sort_values(by='timestamp', inplace=True)
+    plot_data['hour'] = [i.hour for i in pd.to_datetime(plot_data['time'])]
+    plot_data.sort_values(by='time', inplace=True)
 
     final_data = plot_data[plot_data.hour <= (0+hours)-1]
 
@@ -80,12 +80,12 @@ def plot_publictrades(pt_data,
                         row_heights=[0.75,0.25])
 
     fig.add_trace(
-        go.Line(name='Traded price', x=final_data['timestamp'],
+        go.Line(name='Traded price', x=final_data['time'],
                                      y=final_data.price,
                                      marker={'color': '#B2B641'}), row=1, col=1)
 
     fig.add_trace(
-        go.Bar(name='Traded volume', x=final_data['timestamp'],
+        go.Bar(name='Traded volume', x=final_data['time'],
                                      y=final_data.amount,
                                      marker={'color': '#050505'}), row=2, col=1)
 
