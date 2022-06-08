@@ -19,8 +19,7 @@ import scipy.stats as st
 # ======================================= OrderBook metrics function ====================================== #
 
 ### Function definition
-def get_ob_metrics(ob_data,
-                   depth):
+def get_ob_metrics(ob_data, depth=None):
 
     # -- General lambda functions definition -- #
     calc_inbalace = lambda b,a,d: np.sum(b[:d]) / np.sum(np.add(b[:d],a[:d]))
