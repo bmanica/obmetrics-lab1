@@ -76,8 +76,8 @@ def get_ob_metrics(ob_data, depth=None):
                                  ob_data[i]['ask'], ob_data[i]['ask_size'],1) for i in ob_data}
 
         # VWAP (Volume-Weigthed Average Price), in this section just top of the book
-        ob_vwap = {i: [calc_vwap(ob_data[i]['bid'], ob_data[i]['bid_size'],
-                                ob_data[i]['ask'], ob_data[i]['ask_size'], 1)]
+        ob_vwap = {i: calc_vwap(ob_data[i]['bid'], ob_data[i]['bid_size'],
+                                ob_data[i]['ask'], ob_data[i]['ask_size'], 1)
                                 for i in ob_data}
 
         # Stats momentums for OrderBook inbalance
@@ -118,8 +118,8 @@ def get_ob_metrics(ob_data, depth=None):
         # Second way to calculate
 
         # VWAP (Volume-Weigthed Average Price), in this section just top of the book
-        ob_vwap = {i: [calc_vwap(ob_data[i]['bid'], ob_data[i]['bid_size'],
-                                ob_data[i]['ask'], ob_data[i]['ask_size'], depth)]
+        ob_vwap = {i: calc_vwap(ob_data[i]['bid'], ob_data[i]['bid_size'],
+                                ob_data[i]['ask'], ob_data[i]['ask_size'], depth)
                    for i in ob_data}
 
         # Stats moments for OrderBook inbalance
